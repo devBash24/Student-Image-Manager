@@ -1,0 +1,36 @@
+{
+  "language": "en",
+  "student_number_patterns": [
+    "\"^(?P<year>202\\\\d)(?P<dept>\\\\d{2})(?P<id>\\\\d{4})$\""
+  ],
+  "department_rules": {
+    "20": "IT",
+    "30": "Business",
+    "51": "Atmospheric Science"
+  },
+  "excel_columns": {
+    "student_no": "student_no",
+    "first_name": "first_name",
+    "last_name": "last_name",
+    "passport_number": "passport_number"
+  },
+  "ocr": {
+    "tesseract_cmd": "",
+    "crop_bottom_ratio": 0.28,
+    "threshold": 150,
+    "tesseract_config": "--psm 6"
+  },
+  "output": {
+    "mode": "copy",
+    "folder_name": "output",
+    "unknown_department": "Unknown"
+  },
+  "supported_extensions": [
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".tif",
+    ".tiff",
+    ".bmp"
+  ]
+}
