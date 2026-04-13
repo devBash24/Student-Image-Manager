@@ -79,6 +79,7 @@ class OcrService:
             prepared = self._prepare_image(image)
             return pytesseract.image_to_string(
                 prepared,
+                lang=self.config.get("language", "eng"),
                 config=self.config.get("tesseract_config", "--psm 6"),
             )
         finally:

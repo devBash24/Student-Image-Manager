@@ -3,26 +3,23 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>VANTIX Student Image Organizer</title>
+    <title>OCR Graduating Student Scanner</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body>
-    <main class="shell">
-      <header class="topbar">
-        <div class="topbar__brand">
-          <p class="eyebrow" data-i18n="eyebrow"></p>
+  <body data-route="setup">
+    <main class="app-frame">
+      <header class="titlebar">
+        <div class="titlebar__brand">
+          <svg class="titlebar__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M9 3 7.17 5H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+            />
+          </svg>
           <h1 data-i18n="title"></h1>
-          <p id="localeHint" class="locale-hint" aria-live="polite"></p>
         </div>
-        <button
-          type="button"
-          id="openSettings"
-          class="icon-btn icon-btn--gear"
-          aria-haspopup="dialog"
-          aria-controls="settingsDialog"
-          aria-expanded="false"
-        >
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <button id="openSettings" class="icon-button" type="button" aria-haspopup="dialog" aria-controls="settingsModal">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <path
               fill="currentColor"
               d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7Zm7.43-2.53c.04-.32.07-.66.07-1s-.03-.68-.07-1l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65A.488.488 0 0 0 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.99s.03.68.07 1l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65Z"
@@ -31,94 +28,89 @@
         </button>
       </header>
 
-      <section class="grid">
-        <article class="panel panel--inputs">
-          <h2 data-i18n="inputs"></h2>
-          <div class="field-row">
-            <button id="selectFolder" data-i18n="selectFolder"></button>
-            <span id="imageFolder" class="path" data-i18n="noFolder"></span>
-          </div>
-          <div class="field-row">
-            <button id="selectExcel" data-i18n="selectExcel"></button>
-            <span id="excelFile" class="path" data-i18n="noExcel"></span>
-          </div>
-          <div id="dropZone" class="drop-zone" data-i18n="dropHint"></div>
-        </article>
+      <section id="setupView" class="view view--setup">
+        <div class="setup-card">
+          <label class="path-field">
+            <span data-i18n="imageFolder"></span>
+            <button id="selectFolder" class="path-control" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 4 12 6h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6c0-1.1.9-2 2-2h6Zm10 6H4v8h16v-8Z" /></svg>
+              <span id="imageFolderText" data-i18n="noFolder"></span>
+            </button>
+          </label>
+          <label class="path-field">
+            <span data-i18n="excelFile"></span>
+            <button id="selectExcel" class="path-control path-control--split" type="button">
+              <span id="excelFileText" data-i18n="noExcel"></span>
+              <strong data-i18n="browse"></strong>
+            </button>
+          </label>
+          <label class="path-field">
+            <span data-i18n="outputFolder"></span>
+            <button id="selectOutput" class="path-control path-control--split" type="button">
+              <span id="outputFolderText"></span>
+              <strong data-i18n="browse"></strong>
+            </button>
+          </label>
+          <button id="setupStart" class="primary-action" type="button" data-i18n="startScan"></button>
+        </div>
+      </section>
 
-        <article class="panel panel--processing">
-          <h2 data-i18n="processing"></h2>
-          <div class="actions">
-            <button id="start" data-i18n="start"></button>
-            <button id="stop" class="secondary" data-i18n="stop"></button>
-          </div>
-          <div class="progress"><div id="bar"></div></div>
-          <p id="percent" class="percent-label">0%</p>
-          <div class="counters">
-            <span><b data-i18n="total"></b> <em id="total">0</em></span>
-            <span><b data-i18n="processed"></b> <em id="processed">0</em></span>
-            <span><b data-i18n="success"></b> <em id="success">0</em></span>
-            <span><b data-i18n="failed"></b> <em id="failed">0</em></span>
-          </div>
-        </article>
+      <section id="scanningView" class="view view--scanning">
+        <div class="scan-left">
+          <figure class="student-preview">
+            <img id="scanImage" alt="" />
+            <figcaption id="scanStudent">-</figcaption>
+          </figure>
+          <button id="stopScan" class="primary-action primary-action--stop" type="button" data-i18n="stop"></button>
+        </div>
+        <div class="scan-right">
+          <h2 data-i18n="scanningImages"></h2>
+          <div class="scan-stat"><span data-i18n="imagesScanned"></span><strong id="scannedCount">0 / 0</strong></div>
+          <div class="scan-stat"><span data-i18n="validNumbers"></span><strong id="validCount">0</strong></div>
+          <div class="scan-stat"><span data-i18n="invalidErrors"></span><strong id="errorCount">0</strong></div>
+          <div class="scan-status" id="scanStatus">-</div>
+          <div class="progress-line"><div id="progressBar"></div></div>
+        </div>
+        <div class="rings">
+          <div class="ring" id="percentRing"><strong id="percentValue">0%</strong><span data-i18n="completed"></span></div>
+          <div class="ring ring--errors"><strong id="ringErrors">0</strong><span data-i18n="errors"></span></div>
+        </div>
+      </section>
 
-        <article class="panel wide panel--results">
-          <div class="panel-title-row">
-            <h2 data-i18n="results"></h2>
-            <button id="openOutput" class="secondary" data-i18n="openOutput"></button>
+      <section id="resultsView" class="view view--results">
+        <div class="results-preview">
+          <img id="resultImage" alt="" />
+          <strong id="resultStudent">-</strong>
+        </div>
+        <div class="results-panel">
+          <div class="results-header">
+            <h2 data-i18n="ocrLogResults"></h2>
+            <button id="resultsSettings" class="mini-button" type="button" data-i18n="settings"></button>
           </div>
-          <ul id="failedList" class="failed-list"></ul>
-        </article>
-
-        <article class="panel wide logs-panel">
-          <h2 data-i18n="logs"></h2>
-          <ol id="logs" class="logs"></ol>
-        </article>
+          <input id="logSearch" class="search" type="search" data-i18n-placeholder="search" />
+          <ol id="resultLog" class="result-log"></ol>
+          <div class="results-actions">
+            <button id="restartScan" class="primary-action" type="button" data-i18n="startScan"></button>
+            <button id="openOutput" class="secondary-action" type="button" data-i18n="openOutput"></button>
+          </div>
+        </div>
       </section>
     </main>
 
     <div id="settingsModal" class="modal" hidden>
-      <div class="modal__backdrop" id="settingsBackdrop" tabindex="-1"></div>
-      <div
-        id="settingsDialog"
-        class="modal__dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="settingsTitle"
-      >
+      <div id="settingsBackdrop" class="modal__backdrop"></div>
+      <section class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
         <header class="modal__header">
-          <h2 id="settingsTitle" class="modal__title" data-i18n="settingsTitle"></h2>
-          <button type="button" id="closeSettings" class="icon-btn icon-btn--close">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path
-                fill="currentColor"
-                d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
-              />
-            </svg>
+          <h2 id="settingsTitle" data-i18n="settingsTitle"></h2>
+          <button id="closeSettings" class="icon-button icon-button--dark" type="button" data-i18n-aria="closeSettings">
+            <span aria-hidden="true">x</span>
           </button>
         </header>
-
-        <div class="modal__body">
-          <section class="settings-section">
-            <h3 class="settings-section__title" data-i18n="settingsGeneral"></h3>
-            <label class="language">
-              <span data-i18n="language"></span>
-              <select id="languageSelect">
-                <option value="en">English</option>
-                <option value="zh-CN">简体中文</option>
-              </select>
-            </label>
-          </section>
-
-          <section class="settings-section">
-            <h3 class="settings-section__title" data-i18n="config"></h3>
-            <label>
-              <span data-i18n="regexPatterns"></span>
-              <textarea id="patterns" rows="4"></textarea>
-            </label>
-            <label>
-              <span data-i18n="departmentRules"></span>
-              <textarea id="departments" rows="4"></textarea>
-            </label>
+        <div class="settings-grid">
+          <section class="settings-card">
+            <h3 data-i18n="validationSettings"></h3>
+            <label><span data-i18n="studentPatterns"></span><textarea id="patterns" rows="4"></textarea></label>
+            <label><span data-i18n="departmentRules"></span><textarea id="departments" rows="4"></textarea></label>
             <div class="columns">
               <label><span data-i18n="colStudent"></span><input id="colStudent" /></label>
               <label><span data-i18n="colFirst"></span><input id="colFirst" /></label>
@@ -126,54 +118,24 @@
               <label><span data-i18n="colPassport"></span><input id="colPassport" /></label>
             </div>
           </section>
-
-          <details class="settings-advanced">
-            <summary data-i18n="settingsAdvanced"></summary>
-            <div class="settings-advanced__inner">
-              <label>
-                <span data-i18n="ocrCropRatio"></span>
-                <input id="ocrCrop" type="number" min="0.05" max="1" step="0.01" />
-              </label>
-              <label>
-                <span data-i18n="ocrThreshold"></span>
-                <input id="ocrThreshold" type="number" min="0" max="255" step="1" />
-              </label>
-              <label>
-                <span data-i18n="ocrTesseractCmd"></span>
-                <input id="ocrTesseractCmd" type="text" autocomplete="off" spellcheck="false" />
-              </label>
-              <label>
-                <span data-i18n="ocrTesseract"></span>
-                <input id="ocrTesseract" type="text" />
-              </label>
-              <label>
-                <span data-i18n="outputMode"></span>
-                <select id="outputMode">
-                  <option value="copy">copy</option>
-                  <option value="move">move</option>
-                </select>
-              </label>
-              <label>
-                <span data-i18n="outputFolderName"></span>
-                <input id="outputFolder" type="text" />
-              </label>
-              <label>
-                <span data-i18n="outputUnknownDept"></span>
-                <input id="outputUnknown" type="text" />
-              </label>
-              <label>
-                <span data-i18n="supportedExtensions"></span>
-                <input id="supportedExtensions" type="text" />
-              </label>
-            </div>
-          </details>
+          <section class="settings-card">
+            <h3 data-i18n="ocrSettings"></h3>
+            <label><span data-i18n="language"></span><select id="languageSelect"><option value="en">English</option><option value="zh-CN">简体中文</option></select></label>
+            <label><span data-i18n="ocrLanguage"></span><select id="ocrLanguage"><option value="eng">eng (English)</option><option value="chi_sim">chi_sim (简体中文)</option><option value="eng+chi_sim">eng+chi_sim</option></select></label>
+            <label><span data-i18n="ocrMode"></span><select id="ocrMode"><option value="--psm 6">Page segmentation mode: 6</option><option value="--psm 7">Page segmentation mode: 7</option><option value="--psm 11">Page segmentation mode: 11</option></select></label>
+            <label><span data-i18n="confidence"></span><input id="confidence" type="range" min="0" max="100" step="1" /></label>
+            <label><span data-i18n="ocrCropRatio"></span><input id="ocrCrop" type="number" min="0.05" max="1" step="0.01" /></label>
+            <label><span data-i18n="ocrThreshold"></span><input id="ocrThreshold" type="number" min="0" max="255" step="1" /></label>
+            <label><span data-i18n="ocrTesseractCmd"></span><input id="ocrTesseractCmd" /></label>
+            <label><span data-i18n="outputMode"></span><select id="outputMode"><option value="copy">copy</option><option value="move">move</option></select></label>
+            <label><span data-i18n="supportedExtensions"></span><input id="supportedExtensions" /></label>
+          </section>
         </div>
-
         <footer class="modal__footer">
-          <button type="button" id="dismissSettings" class="secondary" data-i18n="settingsClose"></button>
-          <button type="button" id="saveConfig" data-i18n="saveSettings"></button>
+          <button id="resetSettings" class="secondary-action" type="button" data-i18n="resetDefaults"></button>
+          <button id="saveConfig" class="primary-action" type="button" data-i18n="saveSettings"></button>
         </footer>
-      </div>
+      </section>
     </div>
 
     <script src="./app.js"></script>

@@ -53,8 +53,9 @@ class BatchProcessor:
 
     def process(self, image_folder: str, excel_file: str, callbacks: ProcessingCallbacks) -> dict[str, Any]:
         image_root = Path(image_folder)
-        output_root = image_root / self.config.get("output", {}).get("folder_name", "output")
+        output_root = self._resolve_output_root(image_root)
         errors: list[dict[str, Any]] = []
+        successes: list[dict[str, Any]] = []
         processed = 0
         success = 0
         failed = 0
@@ -76,16 +77,25 @@ class BatchProcessor:
                 break
 
             callbacks.on_log({"level": "info", "message": "processing_image", "image": image_path.name})
-            error_record = self._process_one(image_path, dataframe, output_root)
+            record = self._process_one(image_path, dataframe, output_root)
             processed += 1
 
-            if error_record:
+            if not record["ok"]:
                 failed += 1
-                errors.append(error_record)
-                callbacks.on_log({"level": "error", "message": error_record["reason"], "image": image_path.name})
+                errors.append(record)
+                callbacks.on_log({"level": "error", "message": record["reason"], "image": image_path.name})
             else:
                 success += 1
-                callbacks.on_log({"level": "info", "message": "image_success", "image": image_path.name})
+                successes.append(record)
+                callbacks.on_log(
+                    {
+                        "level": "info",
+                        "message": "image_success",
+                        "image": image_path.name,
+                        "student_no": record.get("student_no"),
+                        "target": record.get("target"),
+                    }
+                )
 
             percent = int((processed / total) * 100) if total else 100
             callbacks.on_progress(
@@ -116,6 +126,7 @@ class BatchProcessor:
             "processed": processed,
             "success": success,
             "failed": failed,
+            "successes": successes,
             "errors": errors,
             "errors_path": str(errors_path),
             "errors_folder": str(errors_dir),
@@ -124,7 +135,14 @@ class BatchProcessor:
         callbacks.on_done(result)
         return result
 
-    def _process_one(self, image_path: Path, dataframe: pd.DataFrame, output_root: Path) -> dict[str, Any] | None:
+    def sample_image(self, image_folder: str) -> dict[str, Any]:
+        images = self._find_images(Path(image_folder))
+        if not images:
+            return {"ok": False, "error": "no_images"}
+        image = images[0]
+        return {"ok": True, "image": str(image), "name": image.name}
+
+    def _process_one(self, image_path: Path, dataframe: pd.DataFrame, output_root: Path) -> dict[str, Any]:
         try:
             raw_text = self.ocr.extract_text(image_path)
         except Exception as error:
@@ -132,7 +150,7 @@ class BatchProcessor:
 
         validation = self.validator.validate(raw_text)
         if not validation.is_valid or validation.student_no is None:
-            return {"image": str(image_path), "reason": "validation_failed", "raw_text": raw_text}
+            return {"ok": False, "image": str(image_path), "reason": "validation_failed", "raw_text": raw_text}
 
         try:
             row = self._lookup_student(dataframe, validation.student_no)
@@ -150,25 +168,51 @@ class BatchProcessor:
         target_path = self._deduplicate_path(target_dir / filename)
 
         try:
-            shutil.copy2(image_path, target_path)
+            if self.config.get("output", {}).get("mode") == "move":
+                shutil.move(str(image_path), str(target_path))
+            else:
+                shutil.copy2(image_path, target_path)
         except Exception as error:
             return self._error(image_path, "copy_failed", error, student_no=validation.student_no)
 
-        return None
+        return {
+            "ok": True,
+            "image": str(image_path),
+            "student_no": validation.student_no,
+            "department": department,
+            "target": str(target_path),
+        }
+
+    def _resolve_output_root(self, image_root: Path) -> Path:
+        output_config = self.config.get("output", {})
+        folder_path = str(output_config.get("folder_path") or "").strip()
+        if folder_path:
+            path = Path(folder_path).expanduser()
+            return path if path.is_absolute() else image_root / path
+        return image_root / output_config.get("folder_name", "output")
 
     def _find_images(self, image_folder: Path) -> list[Path]:
         if not image_folder.exists() or not image_folder.is_dir():
             raise FileNotFoundError(f"Image folder not found: {image_folder}")
         extensions = {ext.lower() for ext in self.config.get("supported_extensions", [])}
         output_folder_name = self.config.get("output", {}).get("folder_name", "output")
+        output_root = self._resolve_output_root(image_folder).resolve()
         images = [
             path
             for path in image_folder.rglob("*")
             if path.is_file()
             and path.suffix.lower() in extensions
             and output_folder_name not in path.relative_to(image_folder).parts
+            and not self._is_relative_to(path.resolve(), output_root)
         ]
         return sorted(images)
+
+    def _is_relative_to(self, path: Path, parent: Path) -> bool:
+        try:
+            path.relative_to(parent)
+        except ValueError:
+            return False
+        return True
 
     def _load_excel(self, excel_file: Path) -> pd.DataFrame:
         if not excel_file.exists() or not excel_file.is_file():
@@ -211,6 +255,7 @@ class BatchProcessor:
 
     def _error(self, image_path: Path, reason: str, error: Exception, **extra: Any) -> dict[str, Any]:
         return {
+            "ok": False,
             "image": str(image_path),
             "reason": reason,
             "error": type(error).__name__,

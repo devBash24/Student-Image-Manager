@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import mimetypes
 import json
 import os
 import sys
@@ -59,6 +61,27 @@ class Api:
             file_types=("Excel files (*.xlsx;*.xls)", "All files (*.*)"),
         )
         return result[0] if result else None
+
+    def select_output_folder(self) -> str | None:
+        if not self._window:
+            return None
+        result = self._window.create_file_dialog(webview.FOLDER_DIALOG)
+        return result[0] if result else None
+
+    def get_image_data_url(self, image_path: str) -> dict[str, Any]:
+        path = Path(image_path)
+        if not path.is_file():
+            return {"ok": False, "error": "image_missing"}
+        mime_type = mimetypes.guess_type(path.name)[0] or "image/jpeg"
+        with path.open("rb") as file:
+            encoded = base64.b64encode(file.read()).decode("ascii")
+        return {"ok": True, "src": f"data:{mime_type};base64,{encoded}", "name": path.name}
+
+    def sample_image(self, image_folder: str, config: dict[str, Any]) -> dict[str, Any]:
+        try:
+            return BatchProcessor(config).sample_image(image_folder)
+        except Exception as error:
+            return {"ok": False, "error": type(error).__name__, "detail": str(error)}
 
     def start_processing(self, image_folder: str, excel_file: str, config: dict[str, Any]) -> dict[str, Any]:
         if self._worker and self._worker.is_alive():
