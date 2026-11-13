@@ -29,3 +29,8 @@
 *.xls
 *.csv
 product.md
+
+generated_realistic/output/
+**/output/
+build/
+dist/

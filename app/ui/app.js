@@ -35,6 +35,7 @@ const i18n = {
     noExcel: "Select student info spreadsheet",
     browse: "Browse...",
     startScan: "Start Scan",
+    resetRestart: "Reset / Restart",
     stop: "Stop",
     scanningImages: "Scanning images...",
     imagesScanned: "Images Scanned:",
@@ -44,7 +45,13 @@ const i18n = {
     errors: "Errors",
     ocrLogResults: "OCR Log / Results",
     search: "Search...",
+    filterAll: "All",
+    filterSuccessful: "Successful",
+    filterFailed: "Failed",
     settings: "Settings",
+    openSettings: "Open settings",
+    minimizeApp: "Minimize app",
+    closeApp: "Close app",
     openOutput: "Open output folder",
     settingsTitle: "Scanner Settings",
     validationSettings: "Validation Settings",
@@ -82,6 +89,7 @@ const i18n = {
     copy_failed: "Copy failed",
     noFailures: "No failed images",
     noLogs: "No scan results yet",
+    noMatchingLogs: "No matching log entries",
     noImage: "No image preview",
     invalidConfig: "Fix the settings before scanning",
     image_missing: "Image preview unavailable",
@@ -95,6 +103,7 @@ const i18n = {
     noExcel: "选择学生信息表",
     browse: "浏览...",
     startScan: "开始扫描",
+    resetRestart: "重置 / 重新开始",
     stop: "停止",
     scanningImages: "正在扫描照片...",
     imagesScanned: "已扫描照片：",
@@ -104,7 +113,13 @@ const i18n = {
     errors: "错误",
     ocrLogResults: "OCR 日志 / 结果",
     search: "搜索...",
+    filterAll: "全部",
+    filterSuccessful: "成功",
+    filterFailed: "失败",
     settings: "设置",
+    openSettings: "打开设置",
+    minimizeApp: "最小化应用",
+    closeApp: "关闭应用",
     openOutput: "打开输出文件夹",
     settingsTitle: "扫描器设置",
     validationSettings: "验证设置",
@@ -142,6 +157,7 @@ const i18n = {
     copy_failed: "复制失败",
     noFailures: "没有失败的照片",
     noLogs: "暂无扫描结果",
+    noMatchingLogs: "没有匹配的日志",
     noImage: "暂无图片预览",
     invalidConfig: "扫描前请修正设置",
     image_missing: "图片预览不可用",
@@ -157,6 +173,10 @@ const state = {
   outputFolder: "",
   progress: { total: 0, processed: 0, success: 0, failed: 0, percent: 0 },
   logs: [],
+  logFilter: "all",
+  nextLogId: 1,
+  selectedLogId: null,
+  scanStatus: { labelKey: "", image: "" },
   lastResult: null,
   lastPreviewPath: "",
 };
@@ -197,11 +217,39 @@ function translate() {
   $("imageFolderText").textContent = state.imageFolder || t("noFolder");
   $("excelFileText").textContent = state.excelFile || t("noExcel");
   $("outputFolderText").textContent = defaultOutputFolder();
+  renderScanStatus();
+  renderLogs();
+}
+
+function setScanStatus(labelKey, image = "") {
+  state.scanStatus = { labelKey, image };
+  renderScanStatus();
+}
+
+function renderScanStatus() {
+  const status = $("scanStatus");
+  if (!status || !state.scanStatus.labelKey) return;
+  const label = t(state.scanStatus.labelKey);
+  status.textContent = state.scanStatus.image ? `${label}: ${state.scanStatus.image}` : label;
 }
 
 function addLog(entry) {
-  state.logs.unshift({ time: new Date().toLocaleTimeString(), ...entry });
+  state.logs.unshift({ id: state.nextLogId++, time: new Date().toLocaleTimeString(), ...entry });
   renderLogs();
+}
+
+function logLabel(entry) {
+  return entry.labelKey ? t(entry.labelKey) : entry.label || "";
+}
+
+function resolveLogImagePath(entry) {
+  if (!entry) return "";
+  if (entry.target) return entry.target;
+  if (!entry.image) return "";
+  if (/^[A-Za-z]:[\\/]/.test(entry.image) || entry.image.startsWith("\\\\") || entry.image.startsWith("/")) {
+    return entry.image;
+  }
+  return joinPath(state.imageFolder, entry.image);
 }
 
 function renderLogs() {
@@ -209,22 +257,65 @@ function renderLogs() {
   const query = $("logSearch").value.trim().toLowerCase();
   list.innerHTML = "";
   const filtered = state.logs.filter((entry) => {
-    const text = `${entry.label || ""} ${entry.image || ""} ${entry.student_no || ""}`.toLowerCase();
-    return !query || text.includes(query);
+    const text = `${logLabel(entry)} ${entry.image || ""} ${entry.student_no || ""}`.toLowerCase();
+    const matchesSearch = !query || text.includes(query);
+    const matchesStatus =
+      state.logFilter === "all" ||
+      (state.logFilter === "successful" && entry.kind === "scan" && entry.level !== "error") ||
+      (state.logFilter === "failed" && entry.level === "error");
+    return matchesSearch && matchesStatus;
   });
   if (filtered.length === 0) {
     const empty = document.createElement("li");
-    empty.textContent = t(state.logs.length === 0 ? "noLogs" : "noFailures");
+    empty.textContent = t(state.logs.length === 0 ? "noLogs" : "noMatchingLogs");
     list.appendChild(empty);
     return;
   }
   filtered.forEach((entry) => {
     const item = document.createElement("li");
-    item.className = entry.level === "error" ? "error" : "";
+    const imagePath = resolveLogImagePath(entry);
+    const isClickable = Boolean(imagePath);
+    item.className = [
+      entry.level === "error" ? "error" : "",
+      isClickable ? "is-clickable" : "",
+      state.selectedLogId === entry.id ? "is-selected" : "",
+    ].filter(Boolean).join(" ");
+    const label = logLabel(entry);
     const suffix = entry.student_no ? ` ${entry.student_no}` : "";
-    item.textContent = `${entry.label}${suffix}${entry.image ? `: ${entry.image}` : ""}`;
+    if (isClickable) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "result-log__button";
+      button.textContent = `${label}${suffix}${entry.image ? `: ${entry.image}` : ""}`;
+      button.addEventListener("click", () => {
+        void selectLogEntry(entry.id);
+      });
+      item.appendChild(button);
+    } else {
+      item.textContent = `${label}${suffix}${entry.image ? `: ${entry.image}` : ""}`;
+    }
     list.appendChild(item);
   });
+}
+
+async function selectLogEntry(entryId) {
+  const entry = state.logs.find((item) => item.id === entryId);
+  const imagePath = resolveLogImagePath(entry);
+  if (!entry || !imagePath) return;
+  state.selectedLogId = entryId;
+  await setPreviewImage(imagePath, "resultImage");
+  $("resultStudent").textContent = entry.student_no || "-";
+  renderLogs();
+}
+
+function setLogFilter(filter) {
+  state.logFilter = filter;
+  document.querySelectorAll(".log-filter__button").forEach((button) => {
+    const active = button.dataset.filter === filter;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+  renderLogs();
 }
 
 function renderProgress(payload = state.progress) {
@@ -329,7 +420,7 @@ async function saveSettings({ close = false } = {}) {
   state.language = state.config.language;
   await window.pywebview.api.save_config(state.config);
   translate();
-  addLog({ level: "info", label: t("configSaved") });
+  addLog({ level: "info", labelKey: "configSaved" });
   if (close) closeSettings();
 }
 
@@ -344,7 +435,7 @@ function closeSettings() {
 
 function requireInputs() {
   if (!state.imageFolder || !state.excelFile) {
-    addLog({ level: "error", label: t("chooseInputs") });
+    addLog({ level: "error", labelKey: "chooseInputs" });
     return false;
   }
   return true;
@@ -357,10 +448,11 @@ async function startScan() {
     state.language = state.config.language;
     await window.pywebview.api.save_config(state.config);
     state.logs = [];
+    state.selectedLogId = null;
     state.lastResult = null;
     renderLogs();
     renderProgress({ total: 0, processed: 0, success: 0, failed: 0, percent: 0 });
-    $("scanStatus").textContent = t("processingStarted");
+    setScanStatus("processingStarted");
     setRoute("scanning");
     await loadSampleImage();
     const result = await window.pywebview.api.start_processing(state.imageFolder, state.excelFile, state.config);
@@ -369,11 +461,28 @@ async function startScan() {
       setRoute("results");
       return;
     }
-    addLog({ level: "info", label: t("processingStarted") });
+    addLog({ level: "info", labelKey: "processingStarted" });
   } catch (error) {
     addLog({ level: "error", label: error.message || t("invalidConfig") });
     setRoute("results");
   }
+}
+
+async function resetScan() {
+  await window.pywebview.api.stop_processing();
+  state.logs = [];
+  state.selectedLogId = null;
+  state.lastResult = null;
+  state.scanStatus = { labelKey: "", image: "" };
+  $("scanStatus").textContent = "-";
+  $("scanStudent").textContent = "-";
+  $("resultStudent").textContent = "-";
+  $("scanImage").removeAttribute("src");
+  $("resultImage").removeAttribute("src");
+  renderProgress({ total: 0, processed: 0, success: 0, failed: 0, percent: 0 });
+  renderLogs();
+  setRoute("setup");
+  await loadSampleImage();
 }
 
 async function showResultPreview(result) {
@@ -392,10 +501,16 @@ window.appEvents = async (event, payload) => {
     return;
   }
   if (event === "log") {
-    const label = t(payload.message);
-    addLog({ level: payload.level, label, image: payload.image, student_no: payload.student_no });
+    addLog({
+      level: payload.level,
+      labelKey: payload.message,
+      image: payload.image,
+      student_no: payload.student_no,
+      target: payload.target,
+      kind: payload.message === "image_success" || payload.level === "error" ? "scan" : "system",
+    });
     if (payload.image) {
-      $("scanStatus").textContent = `${label}: ${payload.image}`;
+      setScanStatus(payload.message, payload.image);
       await setPreviewImage(joinPath(state.imageFolder, payload.image), "scanImage");
     }
     if (payload.student_no) $("scanStudent").textContent = payload.student_no;
@@ -403,7 +518,7 @@ window.appEvents = async (event, payload) => {
   }
   if (event === "done") {
     state.lastResult = payload;
-    addLog({ level: payload.ok ? "info" : "error", label: payload.ok ? t("processingComplete") : payload.error });
+    addLog({ level: payload.ok ? "info" : "error", labelKey: payload.ok ? "processingComplete" : undefined, label: payload.ok ? undefined : payload.error });
     renderProgress(payload);
     await showResultPreview(payload);
     renderLogs();
@@ -443,18 +558,25 @@ async function boot() {
   });
 
   $("setupStart").addEventListener("click", startScan);
-  $("restartScan").addEventListener("click", startScan);
+  $("restartScan").addEventListener("click", () => {
+    void resetScan();
+  });
   $("stopScan").addEventListener("click", async () => {
     await window.pywebview.api.stop_processing();
-    $("scanStatus").textContent = t("processingStopped");
-    addLog({ level: "info", label: t("processingStopped") });
+    setScanStatus("processingStopped");
+    addLog({ level: "info", labelKey: "processingStopped" });
   });
   $("openOutput").addEventListener("click", async () => {
     const result = await window.pywebview.api.open_output_folder();
     if (!result.ok) addLog({ level: "error", label: result.error });
   });
   $("openSettings").addEventListener("click", openSettings);
-  $("resultsSettings").addEventListener("click", openSettings);
+  $("minimizeApp").addEventListener("click", async () => {
+    await window.pywebview.api.minimize_app();
+  });
+  $("closeApp").addEventListener("click", async () => {
+    await window.pywebview.api.close_app();
+  });
   $("closeSettings").addEventListener("click", closeSettings);
   $("settingsBackdrop").addEventListener("click", closeSettings);
   $("saveConfig").addEventListener("click", () => saveSettings({ close: true }).catch((error) => addLog({ level: "error", label: error.message })));
@@ -464,13 +586,17 @@ async function boot() {
     state.outputFolder = "";
     loadForm(state.config);
     translate();
-    addLog({ level: "info", label: t("defaultsLoaded") });
+    addLog({ level: "info", labelKey: "defaultsLoaded" });
   });
   $("languageSelect").addEventListener("change", async () => {
     state.language = $("languageSelect").value;
     translate();
   });
   $("logSearch").addEventListener("input", renderLogs);
+  document.querySelectorAll(".log-filter__button").forEach((button) => {
+    button.addEventListener("click", () => setLogFilter(button.dataset.filter || "all"));
+  });
+  setLogFilter("all");
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !$("settingsModal").hasAttribute("hidden")) closeSettings();
   });
