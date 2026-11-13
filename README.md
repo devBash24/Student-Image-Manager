@@ -44,17 +44,23 @@ The interface lets users choose the image folder, spreadsheet, and output locati
 
 The UI runs in pywebview. A Python worker handles batch processing so the interface can show progress while images are scanned. Settings are stored as JSON under the Windows user profile.
 
-## Interface screenshots
+## Screenshots
 
-The screenshots below are from **Office Util**, a separate desktop application in the supplied `screenshots/` folder. They show related interface work; they do not depict Student Image Organizer.
+**Choose inputs and an output folder**
 
-![Office Util desktop home screen](screenshots/home.png)
+![Student Image Organizer setup screen with image, spreadsheet, and output folder selectors](screenshots/home_en.png)
 
-*Office Util home screen.*
+**Follow a scan in progress**
 
-![Office Util redaction workspace](screenshots/Redactor.png)
+![Scanning screen showing the current photo, student number, progress, and error count](screenshots/process_en.png)
 
-*Office Util redaction workspace.*
+**Review images that need attention**
+
+![Results screen filtered to images whose student numbers could not be validated](screenshots/failed.png)
+
+The interface also supports Simplified Chinese:
+
+![Student Image Organizer results screen in Simplified Chinese](screenshots/results_sim_chin.png)
 
 ## Run locally
 
