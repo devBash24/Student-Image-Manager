@@ -11,9 +11,7 @@ import numpy as np
 import pytesseract
 from PIL import Image
 
-
-def _app_dir() -> Path:
-    return Path(__file__).resolve().parent.parent
+from app.paths import resource_path
 
 
 def resolve_tesseract_executable(ocr_config: dict[str, Any]) -> str | None:
@@ -28,8 +26,10 @@ def resolve_tesseract_executable(ocr_config: dict[str, Any]) -> str | None:
     if cfg_cmd:
         path = Path(cfg_cmd).expanduser()
         if not path.is_absolute():
-            path = _app_dir() / path
+            path = resource_path(str(path))
         candidates.append(path)
+
+    candidates.append(resource_path("Tesseract-OCR", "tesseract.exe"))
 
     which = shutil.which("tesseract")
     if which:
@@ -64,6 +64,7 @@ class OcrService:
     def __init__(self, config: dict[str, Any]) -> None:
         self.config = config
         self._tesseract_cmd = resolve_tesseract_executable(config)
+        self._tessdata_dir = resource_path("Tesseract-OCR", "tessdata")
 
     def extract_text(self, image_path: str | Path) -> str:
         if not self._tesseract_cmd:
@@ -73,16 +74,24 @@ class OcrService:
                 "or the TESSERACT_CMD environment variable."
             )
         previous = pytesseract.pytesseract.tesseract_cmd
+        previous_tessdata_prefix = os.environ.get("TESSDATA_PREFIX")
         pytesseract.pytesseract.tesseract_cmd = self._tesseract_cmd
+        if self._tessdata_dir.is_dir():
+            os.environ["TESSDATA_PREFIX"] = str(self._tessdata_dir.parent)
         try:
             image = Image.open(image_path)
             prepared = self._prepare_image(image)
             return pytesseract.image_to_string(
                 prepared,
+                lang=self.config.get("language", "eng"),
                 config=self.config.get("tesseract_config", "--psm 6"),
             )
         finally:
             pytesseract.pytesseract.tesseract_cmd = previous
+            if previous_tessdata_prefix is None:
+                os.environ.pop("TESSDATA_PREFIX", None)
+            else:
+                os.environ["TESSDATA_PREFIX"] = previous_tessdata_prefix
 
     def _prepare_image(self, image: Image.Image) -> Image.Image:
         image = image.convert("RGB")

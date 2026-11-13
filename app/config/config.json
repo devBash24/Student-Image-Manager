@@ -1,7 +1,7 @@
 {
   "language": "en",
   "student_number_patterns": [
-    "\"^(?P<year>202\\\\d)(?P<dept>\\\\d{2})(?P<id>\\\\d{4})$\""
+    "^(?P<year>202\\d)(?P<dept>\\d{2})(?P<id>\\d{4})$"
   ],
   "department_rules": {
     "20": "IT",
@@ -18,19 +18,15 @@
     "tesseract_cmd": "",
     "crop_bottom_ratio": 0.28,
     "threshold": 150,
-    "tesseract_config": "--psm 6"
+    "tesseract_config": "--psm 6",
+    "language": "eng",
+    "confidence_threshold": 60
   },
   "output": {
     "mode": "copy",
     "folder_name": "output",
+    "folder_path": "",
     "unknown_department": "Unknown"
   },
-  "supported_extensions": [
-    ".jpg",
-    ".jpeg",
-    ".png",
-    ".tif",
-    ".tiff",
-    ".bmp"
-  ]
+  "supported_extensions": [".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp"]
 }

@@ -1,143 +1,206 @@
+const DEFAULT_CONFIG = {
+  language: "en",
+  student_number_patterns: ["^202\\d{7}$", "\\d{10}", "[A-Z]{2}\\d{6}"],
+  department_rules: { "20": "IT", "30": "Business", "51": "Atmospheric Science" },
+  excel_columns: {
+    student_no: "student_no",
+    first_name: "first_name",
+    last_name: "last_name",
+    passport_number: "passport_number",
+  },
+  ocr: {
+    tesseract_cmd: "",
+    crop_bottom_ratio: 0.28,
+    threshold: 150,
+    tesseract_config: "--psm 6",
+    language: "eng",
+    confidence_threshold: 60,
+  },
+  output: {
+    mode: "copy",
+    folder_name: "output",
+    folder_path: "",
+    unknown_department: "Unknown",
+  },
+  supported_extensions: [".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp"],
+};
+
 const i18n = {
   en: {
-    eyebrow: "VANTIX",
-    title: "Student Image Organizer",
-    language: "Language",
-    inputs: "Inputs",
-    selectFolder: "Select image folder",
-    selectExcel: "Select Excel file",
-    noFolder: "No image folder selected",
-    noExcel: "No Excel file selected",
-    dropHint: "Use the buttons above to select files.",
-    config: "Matching & columns",
-    regexPatterns: "Student number regex patterns, one per line",
-    departmentRules: "Department rules as JSON",
+    title: "OCR Graduating Student Scanner",
+    imageFolder: "Image Folder",
+    excelFile: "Student Info (.xlsx)",
+    outputFolder: "Output Folder",
+    noFolder: "Select an image folder",
+    noExcel: "Select student info spreadsheet",
+    browse: "Browse...",
+    startScan: "Start Scan",
+    resetRestart: "Reset / Restart",
+    stop: "Stop",
+    scanningImages: "Scanning images...",
+    imagesScanned: "Images Scanned:",
+    validNumbers: "Valid Student Numbers:",
+    invalidErrors: "Invalid/Errors:",
+    completed: "Completed",
+    errors: "Errors",
+    ocrLogResults: "OCR Log / Results",
+    search: "Search...",
+    filterAll: "All",
+    filterSuccessful: "Successful",
+    filterFailed: "Failed",
+    settings: "Settings",
+    openSettings: "Open settings",
+    minimizeApp: "Minimize app",
+    closeApp: "Close app",
+    openOutput: "Open output folder",
+    settingsTitle: "Scanner Settings",
+    validationSettings: "Validation Settings",
+    studentPatterns: "Student Number Patterns",
+    departmentRules: "Department Rules JSON",
     colStudent: "Student number column",
     colFirst: "First name column",
     colLast: "Last name column",
     colPassport: "Passport number column",
-    saveConfig: "Save config",
-    saveSettings: "Save settings",
-    settingsTitle: "Settings",
-    settingsGeneral: "General",
-    settingsClose: "Close",
-    settingsAdvanced: "Advanced (OCR & output)",
-    ocrCropRatio: "OCR crop bottom ratio (0.05–1)",
-    ocrThreshold: "OCR binarization threshold (0–255)",
-    ocrTesseractCmd:
-      "Tesseract executable path (optional — auto-detects common installs if empty)",
-    ocrTesseract: "Tesseract config string",
-    outputMode: "Output mode",
-    outputModeCopy: "Copy files",
-    outputModeMove: "Move files",
-    outputFolderName: "Output folder name",
-    outputUnknownDept: "Unknown department label",
-    supportedExtensions: "Image extensions (comma-separated)",
-    settingsOpenAria: "Open settings",
-    settingsCloseAria: "Close settings",
-    invalidCrop: "Crop ratio must be between 0.05 and 1",
-    invalidThreshold: "Threshold must be between 0 and 255",
-    invalidExtensions: "Add at least one file extension",
-    processing: "Processing",
-    start: "Start",
-    stop: "Stop",
-    total: "Total",
-    processed: "Processed",
-    success: "Success",
-    failed: "Failed",
-    results: "Results",
-    openOutput: "Open output folder",
-    logs: "Logs",
-    configSaved: "Config saved",
-    chooseInputs: "Select both an image folder and an Excel file first.",
+    ocrSettings: "OCR Settings",
+    language: "UI Language",
+    ocrLanguage: "OCR Language",
+    ocrMode: "OCR Mode",
+    confidence: "OCR Confidence Threshold",
+    ocrCropRatio: "Crop bottom ratio",
+    ocrThreshold: "Binarization threshold",
+    ocrTesseractCmd: "Tesseract executable path",
+    outputMode: "Output Mode",
+    supportedExtensions: "Image extensions",
+    resetDefaults: "Reset to Defaults",
+    saveSettings: "Save Settings",
+    closeSettings: "Close settings",
+    configSaved: "Settings saved",
+    defaultsLoaded: "Defaults loaded",
+    chooseInputs: "Select both an image folder and Excel file first.",
     processingStarted: "Processing started",
     processingStopped: "Stop requested",
     processingComplete: "Processing complete",
     processing_image: "Processing image",
-    image_success: "Image processed",
+    image_success: "Valid",
     processing_stopped: "Processing stopped",
-    validation_failed: "Validation failed",
+    validation_failed: "Invalid",
     ocr_failed: "OCR failed",
     excel_match_failed: "No Excel match",
     copy_failed: "Copy failed",
     noFailures: "No failed images",
+    noLogs: "No scan results yet",
+    noMatchingLogs: "No matching log entries",
+    noImage: "No image preview",
+    invalidConfig: "Fix the settings before scanning",
+    image_missing: "Image preview unavailable",
   },
   "zh-CN": {
-    eyebrow: "VANTIX",
-    title: "学生照片整理工具",
-    language: "语言",
-    inputs: "输入",
-    selectFolder: "选择照片文件夹",
-    selectExcel: "选择 Excel 文件",
-    noFolder: "尚未选择照片文件夹",
-    noExcel: "尚未选择 Excel 文件",
-    dropHint: "请使用上方按钮选择文件。",
-    config: "匹配与列名",
-    regexPatterns: "学生编号正则规则，每行一个",
+    title: "OCR 毕业学生照片扫描器",
+    imageFolder: "照片文件夹",
+    excelFile: "学生信息（.xlsx）",
+    outputFolder: "输出文件夹",
+    noFolder: "选择照片文件夹",
+    noExcel: "选择学生信息表",
+    browse: "浏览...",
+    startScan: "开始扫描",
+    resetRestart: "重置 / 重新开始",
+    stop: "停止",
+    scanningImages: "正在扫描照片...",
+    imagesScanned: "已扫描照片：",
+    validNumbers: "有效学生编号：",
+    invalidErrors: "无效/错误：",
+    completed: "已完成",
+    errors: "错误",
+    ocrLogResults: "OCR 日志 / 结果",
+    search: "搜索...",
+    filterAll: "全部",
+    filterSuccessful: "成功",
+    filterFailed: "失败",
+    settings: "设置",
+    openSettings: "打开设置",
+    minimizeApp: "最小化应用",
+    closeApp: "关闭应用",
+    openOutput: "打开输出文件夹",
+    settingsTitle: "扫描器设置",
+    validationSettings: "验证设置",
+    studentPatterns: "学生编号规则",
     departmentRules: "院系规则 JSON",
     colStudent: "学生编号列",
     colFirst: "名字列",
     colLast: "姓氏列",
     colPassport: "护照号码列",
-    saveConfig: "保存配置",
-    saveSettings: "保存设置",
-    settingsTitle: "设置",
-    settingsGeneral: "常规",
-    settingsClose: "关闭",
-    settingsAdvanced: "高级（OCR 与输出）",
-    ocrCropRatio: "OCR 底部裁剪比例（0.05–1）",
-    ocrThreshold: "OCR 二值化阈值（0–255）",
-    ocrTesseractCmd: "Tesseract 可执行文件路径（可留空，将自动检测常见安装位置）",
-    ocrTesseract: "Tesseract 参数字符串",
+    ocrSettings: "OCR 设置",
+    language: "界面语言",
+    ocrLanguage: "OCR 语言",
+    ocrMode: "OCR 模式",
+    confidence: "OCR 置信度阈值",
+    ocrCropRatio: "底部裁剪比例",
+    ocrThreshold: "二值化阈值",
+    ocrTesseractCmd: "Tesseract 可执行文件路径",
     outputMode: "输出模式",
-    outputModeCopy: "复制文件",
-    outputModeMove: "移动文件",
-    outputFolderName: "输出文件夹名称",
-    outputUnknownDept: "未知院系显示名称",
-    supportedExtensions: "图片扩展名（逗号分隔）",
-    settingsOpenAria: "打开设置",
-    settingsCloseAria: "关闭设置",
-    invalidCrop: "裁剪比例必须在 0.05 到 1 之间",
-    invalidThreshold: "阈值必须在 0 到 255 之间",
-    invalidExtensions: "请至少填写一个扩展名",
-    processing: "处理",
-    start: "开始",
-    stop: "停止",
-    total: "总数",
-    processed: "已处理",
-    success: "成功",
-    failed: "失败",
-    results: "结果",
-    openOutput: "打开输出文件夹",
-    logs: "日志",
-    configSaved: "配置已保存",
+    supportedExtensions: "图片扩展名",
+    resetDefaults: "恢复默认",
+    saveSettings: "保存设置",
+    closeSettings: "关闭设置",
+    configSaved: "设置已保存",
+    defaultsLoaded: "默认设置已载入",
     chooseInputs: "请先选择照片文件夹和 Excel 文件。",
     processingStarted: "开始处理",
     processingStopped: "已请求停止",
     processingComplete: "处理完成",
     processing_image: "正在处理照片",
-    image_success: "照片处理完成",
+    image_success: "有效",
     processing_stopped: "处理已停止",
-    validation_failed: "验证失败",
+    validation_failed: "无效",
     ocr_failed: "OCR 失败",
     excel_match_failed: "没有匹配的 Excel 记录",
     copy_failed: "复制失败",
     noFailures: "没有失败的照片",
+    noLogs: "暂无扫描结果",
+    noMatchingLogs: "没有匹配的日志",
+    noImage: "暂无图片预览",
+    invalidConfig: "扫描前请修正设置",
+    image_missing: "图片预览不可用",
   },
 };
 
 const state = {
+  route: "setup",
   config: null,
   language: "en",
   imageFolder: "",
   excelFile: "",
+  outputFolder: "",
+  progress: { total: 0, processed: 0, success: 0, failed: 0, percent: 0 },
+  logs: [],
+  logFilter: "all",
+  nextLogId: 1,
+  selectedLogId: null,
+  scanStatus: { labelKey: "", image: "" },
+  lastResult: null,
+  lastPreviewPath: "",
 };
 
 const $ = (id) => document.getElementById(id);
+const clone = (value) => JSON.parse(JSON.stringify(value));
 const t = (key) => (i18n[state.language] && i18n[state.language][key]) || i18n.en[key] || key;
 
-function languageDisplayName() {
-  return state.language === "zh-CN" ? "简体中文" : "English";
+function setRoute(route) {
+  state.route = route;
+  document.body.dataset.route = route;
+}
+
+function joinPath(root, child) {
+  if (!root) return child || "";
+  if (!child) return root;
+  const slash = root.includes("\\") ? "\\" : "/";
+  return root.endsWith("\\") || root.endsWith("/") ? `${root}${child}` : `${root}${slash}${child}`;
+}
+
+function defaultOutputFolder() {
+  const configured = state.outputFolder || state.config?.output?.folder_path || "";
+  if (configured) return configured;
+  return state.imageFolder ? joinPath(state.imageFolder, state.config?.output?.folder_name || "output") : "output";
 }
 
 function translate() {
@@ -145,96 +208,151 @@ function translate() {
   document.querySelectorAll("[data-i18n]").forEach((element) => {
     element.textContent = t(element.dataset.i18n);
   });
-  $("imageFolder").textContent = state.imageFolder || t("noFolder");
-  $("excelFile").textContent = state.excelFile || t("noExcel");
-  const hint = $("localeHint");
-  if (hint) {
-    hint.textContent = `${t("language")}: ${languageDisplayName()}`;
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
+    element.setAttribute("placeholder", t(element.dataset.i18nPlaceholder));
+  });
+  document.querySelectorAll("[data-i18n-aria]").forEach((element) => {
+    element.setAttribute("aria-label", t(element.dataset.i18nAria));
+  });
+  $("imageFolderText").textContent = state.imageFolder || t("noFolder");
+  $("excelFileText").textContent = state.excelFile || t("noExcel");
+  $("outputFolderText").textContent = defaultOutputFolder();
+  renderScanStatus();
+  renderLogs();
+}
+
+function setScanStatus(labelKey, image = "") {
+  state.scanStatus = { labelKey, image };
+  renderScanStatus();
+}
+
+function renderScanStatus() {
+  const status = $("scanStatus");
+  if (!status || !state.scanStatus.labelKey) return;
+  const label = t(state.scanStatus.labelKey);
+  status.textContent = state.scanStatus.image ? `${label}: ${state.scanStatus.image}` : label;
+}
+
+function addLog(entry) {
+  state.logs.unshift({ id: state.nextLogId++, time: new Date().toLocaleTimeString(), ...entry });
+  renderLogs();
+}
+
+function logLabel(entry) {
+  return entry.labelKey ? t(entry.labelKey) : entry.label || "";
+}
+
+function resolveLogImagePath(entry) {
+  if (!entry) return "";
+  if (entry.target) return entry.target;
+  if (!entry.image) return "";
+  if (/^[A-Za-z]:[\\/]/.test(entry.image) || entry.image.startsWith("\\\\") || entry.image.startsWith("/")) {
+    return entry.image;
   }
-  const openBtn = $("openSettings");
-  if (openBtn) {
-    openBtn.setAttribute("aria-label", t("settingsOpenAria"));
+  return joinPath(state.imageFolder, entry.image);
+}
+
+function renderLogs() {
+  const list = $("resultLog");
+  const query = $("logSearch").value.trim().toLowerCase();
+  list.innerHTML = "";
+  const filtered = state.logs.filter((entry) => {
+    const text = `${logLabel(entry)} ${entry.image || ""} ${entry.student_no || ""}`.toLowerCase();
+    const matchesSearch = !query || text.includes(query);
+    const matchesStatus =
+      state.logFilter === "all" ||
+      (state.logFilter === "successful" && entry.kind === "scan" && entry.level !== "error") ||
+      (state.logFilter === "failed" && entry.level === "error");
+    return matchesSearch && matchesStatus;
+  });
+  if (filtered.length === 0) {
+    const empty = document.createElement("li");
+    empty.textContent = t(state.logs.length === 0 ? "noLogs" : "noMatchingLogs");
+    list.appendChild(empty);
+    return;
   }
-  const closeIcon = $("closeSettings");
-  if (closeIcon) {
-    closeIcon.setAttribute("aria-label", t("settingsCloseAria"));
-  }
-  const outputMode = $("outputMode");
-  if (outputMode && outputMode.options.length >= 2) {
-    outputMode.options[0].textContent = t("outputModeCopy");
-    outputMode.options[1].textContent = t("outputModeMove");
+  filtered.forEach((entry) => {
+    const item = document.createElement("li");
+    const imagePath = resolveLogImagePath(entry);
+    const isClickable = Boolean(imagePath);
+    item.className = [
+      entry.level === "error" ? "error" : "",
+      isClickable ? "is-clickable" : "",
+      state.selectedLogId === entry.id ? "is-selected" : "",
+    ].filter(Boolean).join(" ");
+    const label = logLabel(entry);
+    const suffix = entry.student_no ? ` ${entry.student_no}` : "";
+    if (isClickable) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "result-log__button";
+      button.textContent = `${label}${suffix}${entry.image ? `: ${entry.image}` : ""}`;
+      button.addEventListener("click", () => {
+        void selectLogEntry(entry.id);
+      });
+      item.appendChild(button);
+    } else {
+      item.textContent = `${label}${suffix}${entry.image ? `: ${entry.image}` : ""}`;
+    }
+    list.appendChild(item);
+  });
+}
+
+async function selectLogEntry(entryId) {
+  const entry = state.logs.find((item) => item.id === entryId);
+  const imagePath = resolveLogImagePath(entry);
+  if (!entry || !imagePath) return;
+  state.selectedLogId = entryId;
+  await setPreviewImage(imagePath, "resultImage");
+  $("resultStudent").textContent = entry.student_no || "-";
+  renderLogs();
+}
+
+function setLogFilter(filter) {
+  state.logFilter = filter;
+  document.querySelectorAll(".log-filter__button").forEach((button) => {
+    const active = button.dataset.filter === filter;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+  renderLogs();
+}
+
+function renderProgress(payload = state.progress) {
+  state.progress = { ...state.progress, ...payload };
+  $("scannedCount").textContent = `${state.progress.processed || 0} / ${state.progress.total || 0}`;
+  $("validCount").textContent = state.progress.success || 0;
+  $("errorCount").textContent = state.progress.failed || 0;
+  $("ringErrors").textContent = state.progress.failed || 0;
+  $("percentValue").textContent = `${state.progress.percent || 0}%`;
+  $("progressBar").style.width = `${state.progress.percent || 0}%`;
+  $("percentRing").style.setProperty("--value", state.progress.percent || 0);
+  const errorValue = state.progress.total ? Math.min(100, Math.round((state.progress.failed / state.progress.total) * 100)) : 0;
+  document.querySelector(".ring--errors").style.setProperty("--value", errorValue);
+}
+
+async function setPreviewImage(path, targetId = "scanImage") {
+  const image = $(targetId);
+  if (!path || !image) return;
+  try {
+    const result = await window.pywebview.api.get_image_data_url(path);
+    if (!result.ok) {
+      image.removeAttribute("src");
+      return;
+    }
+    image.src = result.src;
+    state.lastPreviewPath = path;
+  } catch {
+    image.removeAttribute("src");
   }
 }
 
-function addLog(message, level = "info", detail = "") {
-  const item = document.createElement("li");
-  item.className = level;
-  item.textContent = detail ? `${message}: ${detail}` : message;
-  $("logs").prepend(item);
-}
-
-function requireInputs() {
-  if (!state.imageFolder || !state.excelFile) {
-    addLog(t("chooseInputs"), "error");
-    return false;
-  }
-  return true;
-}
-
-function readConfigFromForm() {
-  const config = JSON.parse(JSON.stringify(state.config));
-  config.language = state.language;
-  config.student_number_patterns = $("patterns").value
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-  config.department_rules = JSON.parse($("departments").value);
-  config.excel_columns = {
-    student_no: $("colStudent").value.trim(),
-    first_name: $("colFirst").value.trim(),
-    last_name: $("colLast").value.trim(),
-    passport_number: $("colPassport").value.trim(),
-  };
-
-  const crop = parseFloat($("ocrCrop").value);
-  if (!Number.isFinite(crop) || crop < 0.05 || crop > 1) {
-    throw new Error(t("invalidCrop"));
-  }
-  const threshold = parseInt($("ocrThreshold").value, 10);
-  if (!Number.isFinite(threshold) || threshold < 0 || threshold > 255) {
-    throw new Error(t("invalidThreshold"));
-  }
-  const tesseract = $("ocrTesseract").value.trim() || "--psm 6";
-  const tesseractCmd = $("ocrTesseractCmd").value.trim();
-  config.ocr = {
-    ...(config.ocr || {}),
-    crop_bottom_ratio: crop,
-    threshold,
-    tesseract_config: tesseract,
-    tesseract_cmd: tesseractCmd,
-  };
-
-  const mode = $("outputMode").value === "move" ? "move" : "copy";
-  const folderName = $("outputFolder").value.trim() || "output";
-  const unknownDept = $("outputUnknown").value.trim() || "Unknown";
-  config.output = {
-    ...(config.output || {}),
-    mode,
-    folder_name: folderName,
-    unknown_department: unknownDept,
-  };
-
-  const exts = $("supportedExtensions").value
-    .split(/[\s,]+/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((s) => (s.startsWith(".") ? s.toLowerCase() : `.${s.toLowerCase()}`));
-  if (exts.length === 0) {
-    throw new Error(t("invalidExtensions"));
-  }
-  config.supported_extensions = exts;
-
-  return config;
+async function loadSampleImage() {
+  if (!state.imageFolder || !state.config) return;
+  const result = await window.pywebview.api.sample_image(state.imageFolder, state.config);
+  if (!result.ok) return;
+  await setPreviewImage(result.image, "scanImage");
+  await setPreviewImage(result.image, "resultImage");
 }
 
 function loadForm(config) {
@@ -244,178 +362,243 @@ function loadForm(config) {
   $("colFirst").value = config.excel_columns?.first_name || "first_name";
   $("colLast").value = config.excel_columns?.last_name || "last_name";
   $("colPassport").value = config.excel_columns?.passport_number || "passport_number";
-
-  const ocr = config.ocr || {};
-  $("ocrCrop").value = ocr.crop_bottom_ratio ?? 0.28;
-  $("ocrThreshold").value = ocr.threshold ?? 150;
-  $("ocrTesseractCmd").value = ocr.tesseract_cmd ?? "";
-  $("ocrTesseract").value = ocr.tesseract_config ?? "--psm 6";
-
-  const out = config.output || {};
-  $("outputMode").value = out.mode === "move" ? "move" : "copy";
-  $("outputFolder").value = out.folder_name ?? "output";
-  $("outputUnknown").value = out.unknown_department ?? "Unknown";
-
+  $("languageSelect").value = config.language || "en";
+  $("ocrLanguage").value = config.ocr?.language || "eng";
+  $("ocrMode").value = config.ocr?.tesseract_config || "--psm 6";
+  $("confidence").value = config.ocr?.confidence_threshold ?? 60;
+  $("ocrCrop").value = config.ocr?.crop_bottom_ratio ?? 0.28;
+  $("ocrThreshold").value = config.ocr?.threshold ?? 150;
+  $("ocrTesseractCmd").value = config.ocr?.tesseract_cmd || "";
+  $("outputMode").value = config.output?.mode === "move" ? "move" : "copy";
   $("supportedExtensions").value = (config.supported_extensions || []).join(", ");
 }
 
-function updateProgress(payload) {
-  $("total").textContent = payload.total ?? 0;
-  $("processed").textContent = payload.processed ?? 0;
-  $("success").textContent = payload.success ?? 0;
-  $("failed").textContent = payload.failed ?? 0;
-  $("bar").style.width = `${payload.percent ?? 0}%`;
-  $("percent").textContent = `${payload.percent ?? 0}%`;
+function readConfigFromForm() {
+  const config = clone(state.config || DEFAULT_CONFIG);
+  config.language = $("languageSelect").value;
+  config.student_number_patterns = $("patterns").value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  config.department_rules = JSON.parse($("departments").value);
+  config.excel_columns = {
+    student_no: $("colStudent").value.trim(),
+    first_name: $("colFirst").value.trim(),
+    last_name: $("colLast").value.trim(),
+    passport_number: $("colPassport").value.trim(),
+  };
+  const crop = parseFloat($("ocrCrop").value);
+  const threshold = parseInt($("ocrThreshold").value, 10);
+  const confidence = parseInt($("confidence").value, 10);
+  if (!Number.isFinite(crop) || crop < 0.05 || crop > 1) throw new Error(t("invalidConfig"));
+  if (!Number.isFinite(threshold) || threshold < 0 || threshold > 255) throw new Error(t("invalidConfig"));
+  config.ocr = {
+    ...(config.ocr || {}),
+    language: $("ocrLanguage").value,
+    tesseract_config: $("ocrMode").value,
+    confidence_threshold: Number.isFinite(confidence) ? confidence : 60,
+    crop_bottom_ratio: crop,
+    threshold,
+    tesseract_cmd: $("ocrTesseractCmd").value.trim(),
+  };
+  const extensions = $("supportedExtensions").value
+    .split(/[\s,]+/)
+    .map((ext) => ext.trim())
+    .filter(Boolean)
+    .map((ext) => (ext.startsWith(".") ? ext.toLowerCase() : `.${ext.toLowerCase()}`));
+  if (extensions.length === 0) throw new Error(t("invalidConfig"));
+  config.supported_extensions = extensions;
+  config.output = {
+    ...(config.output || {}),
+    mode: $("outputMode").value === "move" ? "move" : "copy",
+    folder_name: config.output?.folder_name || "output",
+    folder_path: state.outputFolder || "",
+    unknown_department: config.output?.unknown_department || "Unknown",
+  };
+  return config;
 }
 
-window.appEvents = (event, payload) => {
-  if (event === "log") {
-    const label = t(payload.message);
-    addLog(payload.image ? `${label}: ${payload.image}` : label, payload.level || "info");
-  }
-  if (event === "progress") {
-    updateProgress(payload);
-  }
-  if (event === "done") {
-    addLog(t("processingComplete"));
-    const list = $("failedList");
-    list.innerHTML = "";
-    if (!payload.errors || payload.errors.length === 0) {
-      const item = document.createElement("li");
-      item.textContent = t("noFailures");
-      list.appendChild(item);
-      return;
-    }
-    payload.errors.forEach((error) => {
-      const item = document.createElement("li");
-      item.className = "error";
-      item.textContent = `${t(error.reason)}: ${error.image}`;
-      list.appendChild(item);
-    });
-  }
-};
-
-function isSettingsModalOpen() {
-  const modal = $("settingsModal");
-  return modal && !modal.hasAttribute("hidden");
+async function saveSettings({ close = false } = {}) {
+  state.config = readConfigFromForm();
+  state.language = state.config.language;
+  await window.pywebview.api.save_config(state.config);
+  translate();
+  addLog({ level: "info", labelKey: "configSaved" });
+  if (close) closeSettings();
 }
 
-function openSettingsModal() {
-  const modal = $("settingsModal");
-  if (!modal) return;
-  state._modalPreviousFocus = document.activeElement;
-  modal.removeAttribute("hidden");
-  document.body.classList.add("modal-open");
-  $("openSettings").setAttribute("aria-expanded", "true");
+function openSettings() {
+  $("settingsModal").removeAttribute("hidden");
   $("languageSelect").focus();
 }
 
-function closeSettingsModal() {
-  const modal = $("settingsModal");
-  if (!modal) return;
-  modal.setAttribute("hidden", "");
-  document.body.classList.remove("modal-open");
-  $("openSettings").setAttribute("aria-expanded", "false");
-  const prev = state._modalPreviousFocus;
-  if (prev && typeof prev.focus === "function") {
-    prev.focus();
-  } else {
-    $("openSettings").focus();
+function closeSettings() {
+  $("settingsModal").setAttribute("hidden", "");
+}
+
+function requireInputs() {
+  if (!state.imageFolder || !state.excelFile) {
+    addLog({ level: "error", labelKey: "chooseInputs" });
+    return false;
+  }
+  return true;
+}
+
+async function startScan() {
+  if (!requireInputs()) return;
+  try {
+    state.config = readConfigFromForm();
+    state.language = state.config.language;
+    await window.pywebview.api.save_config(state.config);
+    state.logs = [];
+    state.selectedLogId = null;
+    state.lastResult = null;
+    renderLogs();
+    renderProgress({ total: 0, processed: 0, success: 0, failed: 0, percent: 0 });
+    setScanStatus("processingStarted");
+    setRoute("scanning");
+    await loadSampleImage();
+    const result = await window.pywebview.api.start_processing(state.imageFolder, state.excelFile, state.config);
+    if (!result.ok) {
+      addLog({ level: "error", label: result.error });
+      setRoute("results");
+      return;
+    }
+    addLog({ level: "info", labelKey: "processingStarted" });
+  } catch (error) {
+    addLog({ level: "error", label: error.message || t("invalidConfig") });
+    setRoute("results");
   }
 }
+
+async function resetScan() {
+  await window.pywebview.api.stop_processing();
+  state.logs = [];
+  state.selectedLogId = null;
+  state.lastResult = null;
+  state.scanStatus = { labelKey: "", image: "" };
+  $("scanStatus").textContent = "-";
+  $("scanStudent").textContent = "-";
+  $("resultStudent").textContent = "-";
+  $("scanImage").removeAttribute("src");
+  $("resultImage").removeAttribute("src");
+  renderProgress({ total: 0, processed: 0, success: 0, failed: 0, percent: 0 });
+  renderLogs();
+  setRoute("setup");
+  await loadSampleImage();
+}
+
+async function showResultPreview(result) {
+  const success = result?.successes && result.successes[0];
+  const failure = result?.errors && result.errors[0];
+  const record = success || failure;
+  if (!record) return;
+  const path = record.target || record.image;
+  await setPreviewImage(path, "resultImage");
+  $("resultStudent").textContent = record.student_no || "-";
+}
+
+window.appEvents = async (event, payload) => {
+  if (event === "progress") {
+    renderProgress(payload);
+    return;
+  }
+  if (event === "log") {
+    addLog({
+      level: payload.level,
+      labelKey: payload.message,
+      image: payload.image,
+      student_no: payload.student_no,
+      target: payload.target,
+      kind: payload.message === "image_success" || payload.level === "error" ? "scan" : "system",
+    });
+    if (payload.image) {
+      setScanStatus(payload.message, payload.image);
+      await setPreviewImage(joinPath(state.imageFolder, payload.image), "scanImage");
+    }
+    if (payload.student_no) $("scanStudent").textContent = payload.student_no;
+    return;
+  }
+  if (event === "done") {
+    state.lastResult = payload;
+    addLog({ level: payload.ok ? "info" : "error", labelKey: payload.ok ? "processingComplete" : undefined, label: payload.ok ? undefined : payload.error });
+    renderProgress(payload);
+    await showResultPreview(payload);
+    renderLogs();
+    setRoute("results");
+  }
+};
 
 async function boot() {
   state.config = await window.pywebview.api.get_config();
   state.language = state.config.language || "en";
-  $("languageSelect").value = state.language;
+  state.outputFolder = state.config.output?.folder_path || "";
   loadForm(state.config);
   translate();
-
-  $("openSettings").addEventListener("click", () => {
-    openSettingsModal();
-  });
-
-  $("closeSettings").addEventListener("click", () => {
-    closeSettingsModal();
-  });
-
-  $("dismissSettings").addEventListener("click", () => {
-    closeSettingsModal();
-  });
-
-  $("settingsBackdrop").addEventListener("click", () => {
-    closeSettingsModal();
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape") return;
-    if (!isSettingsModalOpen()) return;
-    event.preventDefault();
-    closeSettingsModal();
-  });
-
-  $("languageSelect").addEventListener("change", async (event) => {
-    state.language = event.target.value;
-    translate();
-    try {
-      state.config = readConfigFromForm();
-    } catch {
-      state.config = JSON.parse(JSON.stringify(state.config));
-      state.config.language = state.language;
-    }
-    await window.pywebview.api.save_config(state.config);
-  });
+  renderProgress();
+  renderLogs();
 
   $("selectFolder").addEventListener("click", async () => {
     const path = await window.pywebview.api.select_image_folder();
-    if (path) {
-      state.imageFolder = path;
-      translate();
-    }
+    if (!path) return;
+    state.imageFolder = path;
+    translate();
+    await loadSampleImage();
   });
 
   $("selectExcel").addEventListener("click", async () => {
     const path = await window.pywebview.api.select_excel_file();
-    if (path) {
-      state.excelFile = path;
-      translate();
-    }
+    if (!path) return;
+    state.excelFile = path;
+    translate();
   });
 
-  $("saveConfig").addEventListener("click", async () => {
-    try {
-      state.config = readConfigFromForm();
-      await window.pywebview.api.save_config(state.config);
-      addLog(t("configSaved"));
-    } catch (error) {
-      addLog(error.message, "error");
-    }
+  $("selectOutput").addEventListener("click", async () => {
+    const path = await window.pywebview.api.select_output_folder();
+    if (!path) return;
+    state.outputFolder = path;
+    translate();
   });
 
-  $("start").addEventListener("click", async () => {
-    if (!requireInputs()) return;
-    try {
-      state.config = readConfigFromForm();
-      await window.pywebview.api.save_config(state.config);
-      const result = await window.pywebview.api.start_processing(state.imageFolder, state.excelFile, state.config);
-      if (!result.ok) {
-        addLog(result.error, "error");
-        return;
-      }
-      addLog(t("processingStarted"));
-    } catch (error) {
-      addLog(error.message, "error");
-    }
+  $("setupStart").addEventListener("click", startScan);
+  $("restartScan").addEventListener("click", () => {
+    void resetScan();
   });
-
-  $("stop").addEventListener("click", async () => {
+  $("stopScan").addEventListener("click", async () => {
     await window.pywebview.api.stop_processing();
-    addLog(t("processingStopped"));
+    setScanStatus("processingStopped");
+    addLog({ level: "info", labelKey: "processingStopped" });
   });
-
   $("openOutput").addEventListener("click", async () => {
     const result = await window.pywebview.api.open_output_folder();
-    if (!result.ok) addLog(result.error, "error");
+    if (!result.ok) addLog({ level: "error", label: result.error });
+  });
+  $("openSettings").addEventListener("click", openSettings);
+  $("minimizeApp").addEventListener("click", async () => {
+    await window.pywebview.api.minimize_app();
+  });
+  $("closeApp").addEventListener("click", async () => {
+    await window.pywebview.api.close_app();
+  });
+  $("closeSettings").addEventListener("click", closeSettings);
+  $("settingsBackdrop").addEventListener("click", closeSettings);
+  $("saveConfig").addEventListener("click", () => saveSettings({ close: true }).catch((error) => addLog({ level: "error", label: error.message })));
+  $("resetSettings").addEventListener("click", () => {
+    state.config = clone(DEFAULT_CONFIG);
+    state.language = state.config.language;
+    state.outputFolder = "";
+    loadForm(state.config);
+    translate();
+    addLog({ level: "info", labelKey: "defaultsLoaded" });
+  });
+  $("languageSelect").addEventListener("change", async () => {
+    state.language = $("languageSelect").value;
+    translate();
+  });
+  $("logSearch").addEventListener("input", renderLogs);
+  document.querySelectorAll(".log-filter__button").forEach((button) => {
+    button.addEventListener("click", () => setLogFilter(button.dataset.filter || "all"));
+  });
+  setLogFilter("all");
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !$("settingsModal").hasAttribute("hidden")) closeSettings();
   });
 }
 
